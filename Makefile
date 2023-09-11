@@ -10,7 +10,7 @@ endif
 APP := $(APPNAME)$(EXT)
 APP_OSSL := $(APPNAME)_ossl$(EXT)
 
-all: $(APP)
+all: $(APP_OSSL)
 
 $(APP): test_pbkdf2.c pbkdf2_sha256.h
 	$(CC) $(CFLAGS) -o $@ $<

@@ -90,6 +90,8 @@ void compute_pbkdf2(const uint8_t *key, uint32_t klen, const uint8_t *salt, uint
 	
 #if defined(HAS_OSSL)
 	uint8_t *dk_ossl = malloc(dklen);
+	// print that we are using openssl
+	printf("Using OpenSSL\n");
 	PKCS5_PBKDF2_HMAC((const char *) key, (int) klen, salt, (int) slen, (int) rounds,
 	                  EVP_sha256(), (int) dklen, dk_ossl);
 	
@@ -99,8 +101,8 @@ void compute_pbkdf2(const uint8_t *key, uint32_t klen, const uint8_t *salt, uint
 	free(dk);
 }
 
-#define DKLEN 50
-#define ROUNDS 1000
+#define DKLEN 64
+#define ROUNDS 2048
 
 int main(int argc, char **argv)
 {
@@ -109,6 +111,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "test <arg1> <arg2>\n");
 		return 1;
 	}
+	// pring arg1
+	printf("arg1: %s\n", argv[1]);
+	// pring arg2
+	printf("arg2: %s\n", argv[2]);
 	printf("SHA256 of argv[1]:\n");
 	compute_sha((uint8_t *) argv[1], strlen(argv[1]));
 	printf("\n");
