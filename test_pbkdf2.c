@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 	printf("arg2: %s\n", argv[2]);
 	printf("SHA512 of argv[1]:\n");
 	compute_sha((uint8_t *) argv[1], strlen(argv[1]));
-	/*printf("\n");
+	printf("\n");
 	
 	printf("HMAC-SHA512 of argv[2] with key arg[1]:\n");
 	compute_hmac((uint8_t *) argv[1], strlen(argv[1]), (uint8_t *) argv[2], strlen(argv[2]));
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
 	printf("PBKDF2 of key:arg[1], salt:arg[2], rounds:%i, dklen:%i \n", ROUNDS, DKLEN);
 	compute_pbkdf2((uint8_t *) argv[1], strlen(argv[1]), (uint8_t *) argv[2], strlen(argv[2]),
 	    ROUNDS, DKLEN);
-	printf("\n");*/
+	printf("\n");
 	
 	return 0;
 }
