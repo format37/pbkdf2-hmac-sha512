@@ -2,9 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define PBKDF2_SHA256_STATIC
-#define PBKDF2_SHA256_IMPLEMENTATION
-#include "pbkdf2_sha256.h"
+#define PBKDF2_SHA512_STATIC
+#define PBKDF2_SHA512_IMPLEMENTATION
+#include "pbkdf2_sha512.h"
 
 #if defined(HAS_OSSL)
 #include <openssl/evp.h>
@@ -37,15 +37,15 @@ void check_with_ossl(const uint8_t *this_one, const uint8_t *ossl_one, uint32_t 
 
 void compute_sha(const uint8_t *msg, uint32_t mlen)
 {
-	uint8_t md[SHA256_DIGESTLEN];
-	SHA256_CTX sha;
+	uint8_t md[SHA512_DIGESTLEN];
+	SHA512_CTX sha;
 	sha256_init(&sha);
 	sha256_update(&sha, msg, mlen);
 	sha256_final(&sha, md);
 	print_as_hex(md, sizeof md);
 	
 #if defined(HAS_OSSL)
-	uint8_t md_ossl[SHA256_DIGESTLEN];
+	uint8_t md_ossl[SHA512_DIGESTLEN];
 	EVP_MD_CTX *sha_ossl = EVP_MD_CTX_new();
 	EVP_DigestInit_ex(sha_ossl, EVP_sha256(), 0);
 	EVP_DigestUpdate(sha_ossl, msg, mlen);
@@ -59,15 +59,15 @@ void compute_sha(const uint8_t *msg, uint32_t mlen)
 
 void compute_hmac(const uint8_t *key, uint32_t klen, const uint8_t *msg, uint32_t mlen)
 {
-	uint8_t md[SHA256_DIGESTLEN];
-	HMAC_SHA256_CTX hmac;
+	uint8_t md[SHA512_DIGESTLEN];
+	HMAC_SHA512_CTX hmac;
 	hmac_sha256_init(&hmac, key, klen);
 	hmac_sha256_update(&hmac, msg, mlen);
 	hmac_sha256_final(&hmac, md);
 	print_as_hex(md, sizeof md);
 	
 #if defined(HAS_OSSL)
-	uint8_t md_ossl[SHA256_DIGESTLEN];
+	uint8_t md_ossl[SHA512_DIGESTLEN];
 	HMAC_CTX *hmac_ossl = HMAC_CTX_new();
 	HMAC_Init_ex(hmac_ossl, key, (int) klen, EVP_sha256(), 0);
 	HMAC_Update(hmac_ossl, msg, mlen);
@@ -84,7 +84,7 @@ void compute_pbkdf2(const uint8_t *key, uint32_t klen, const uint8_t *salt, uint
     uint32_t rounds, uint32_t dklen)
 {
 	uint8_t *dk = malloc(dklen);
-	HMAC_SHA256_CTX pbkdf_hmac;
+	HMAC_SHA512_CTX pbkdf_hmac;
 	pbkdf2_sha256(&pbkdf_hmac, key, klen, salt, slen, rounds, dk, dklen);
 	print_as_hex(dk, dklen);
 	
@@ -115,11 +115,11 @@ int main(int argc, char **argv)
 	printf("arg1: %s\n", argv[1]);
 	// pring arg2
 	printf("arg2: %s\n", argv[2]);
-	printf("SHA256 of argv[1]:\n");
+	printf("SHA512 of argv[1]:\n");
 	compute_sha((uint8_t *) argv[1], strlen(argv[1]));
 	printf("\n");
 	
-	printf("HMAC-SHA256 of argv[2] with key arg[1]:\n");
+	printf("HMAC-SHA512 of argv[2] with key arg[1]:\n");
 	compute_hmac((uint8_t *) argv[1], strlen(argv[1]), (uint8_t *) argv[2], strlen(argv[2]));
 	printf("\n");
 	

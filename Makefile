@@ -10,12 +10,12 @@ endif
 APP := $(APPNAME)$(EXT)
 APP_OSSL := $(APPNAME)_ossl$(EXT)
 
-all: $(APP_OSSL)
+all: $(APP)
 
-$(APP): test_pbkdf2.c pbkdf2_sha256.h
+$(APP): test_pbkdf2.c pbkdf2_sha512.h
 	$(CC) $(CFLAGS) -o $@ $<
 
-$(APP_OSSL): test_pbkdf2.c pbkdf2_sha256.h
+$(APP_OSSL): test_pbkdf2.c pbkdf2_sha512.h
 	$(CC) $(CFLAGS) -DHAS_OSSL -o $@ $< -lcrypto
 
 clean:
