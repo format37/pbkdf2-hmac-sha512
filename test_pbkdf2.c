@@ -41,15 +41,15 @@ void compute_sha(const uint8_t *msg, uint32_t mlen)
     SHA512_CTX sha;
     sha512_init(&sha);
 
-    printf("After sha512_init\n");  // Debug line
+    //printf("After sha512_init\n");  // Debug line
 
     sha512_update(&sha, msg, mlen);
 
-    printf("After sha512_update\n");  // Debug line
+    //printf("After sha512_update\n");  // Debug line
 
     sha512_final(&sha, md);
 
-    printf("After sha512_final\n");  // Debug line
+    //printf("After sha512_final\n");  // Debug line
 
     printf("Computed SHA-512: ");
     print_as_hex(md, sizeof md);
@@ -71,9 +71,12 @@ void compute_hmac(const uint8_t *key, uint32_t klen, const uint8_t *msg, uint32_
 {
 	uint8_t md[SHA512_DIGESTLEN];
 	HMAC_SHA512_CTX hmac;
+	printf("kle: %i\n", klen);
+	printf("mlen: %i\n", mlen);
 	hmac_sha512_init(&hmac, key, klen);
 	hmac_sha512_update(&hmac, msg, mlen);
 	hmac_sha512_final(&hmac, md);
+	printf("Computed HMAC-SHA-512: ");
 	print_as_hex(md, sizeof md);
 	
 #if defined(HAS_OSSL)
@@ -96,6 +99,7 @@ void compute_pbkdf2(const uint8_t *key, uint32_t klen, const uint8_t *salt, uint
 	uint8_t *dk = malloc(dklen);
 	HMAC_SHA512_CTX pbkdf_hmac;
 	pbkdf2_sha512(&pbkdf_hmac, key, klen, salt, slen, rounds, dk, dklen);
+	printf("Computed PBKDF2-SHA-512: ");
 	print_as_hex(dk, dklen);
 	
 #if defined(HAS_OSSL)

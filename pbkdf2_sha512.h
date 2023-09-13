@@ -59,10 +59,10 @@ PBKDF2_SHA512_DEF void pbkdf2_sha512(HMAC_SHA512_CTX *ctx,
 
 #include <string.h>
 
-static uint32_t ror(uint32_t n, uint32_t k)
+/*static uint32_t ror(uint32_t n, uint32_t k)
 {
 	return (n >> k) | (n << (32 - k));
-}
+}*/
 
 #define ROR(n,k) ror(n,k)
 
@@ -119,11 +119,11 @@ static const uint64_t K[80] = {
 static void sha512_transform(SHA512_CTX *s, const uint8_t *buf)
 {
     // Debug line to print the block being transformed
-    printf("Transforming block: ");
+    /*printf("Transforming block: ");
     for (int i = 0; i < SHA512_BLOCKLEN; ++i) {
         printf("%02x ", buf[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
     uint64_t t1, t2, a, b, c, d, e, f, g, h, m[80]; // Change to uint64_t and m[80]
     uint32_t i, j;
@@ -173,11 +173,11 @@ static void sha512_transform(SHA512_CTX *s, const uint8_t *buf)
 	s->h[7] += h;
 
     // Debug line to print the state after transformation
-    printf("State after transformation: ");
+    /*printf("State after transformation: ");
     for (int i = 0; i < 8; ++i) {
         printf("%lx ", s->h[i]);
     }
-    printf("\n");
+    printf("\n");*/
 }
 
 
@@ -194,11 +194,11 @@ void sha512_init(SHA512_CTX *s)
 	s->h[7] = 0x5be0cd19137e2179ULL;
 
 	// Debug line to print the initial state
-    printf("Initial state: ");
+    /*printf("Initial state: ");
     for (int i = 0; i < 8; ++i) {
         printf("%lx ", s->h[i]);
     }
-    printf("\n");
+    printf("\n");*/
 }
 
 void sha512_final(SHA512_CTX *s, uint8_t *md)
@@ -206,7 +206,8 @@ void sha512_final(SHA512_CTX *s, uint8_t *md)
 	uint32_t r = s->len % SHA512_BLOCKLEN;
 	uint64_t totalBits = s->len * 8;  // Total bits
 	uint64_t len_lower = totalBits & 0xFFFFFFFFFFFFFFFFULL;  // Lower 64 bits
-    uint64_t len_upper = totalBits >> 64;  // Upper 64 bits
+    //uint64_t len_upper = totalBits >> 64;  // Upper 64 bits
+	uint64_t len_upper = 0;  // Upper 64 bits are zero for 64-bit totalBits
 	
     // Pad message
     s->buf[r++] = 0x80;
@@ -227,11 +228,11 @@ void sha512_final(SHA512_CTX *s, uint8_t *md)
 	}
 
 	// Debug line to print the padded block
-    printf("Padded block: ");
+    /*printf("Padded block: ");
     for (int i = 0; i < SHA512_BLOCKLEN; ++i) {
         printf("%02x ", s->buf[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
 	sha512_transform(s, s->buf);
 	
@@ -248,11 +249,11 @@ void sha512_final(SHA512_CTX *s, uint8_t *md)
 	}
 	sha512_init(s);
 	// Debug line to print the final state
-    printf("Final state: ");
+    /*printf("Final state: ");
     for (int i = 0; i < 8; ++i) {
         printf("%lx ", s->h[i]);
     }
-    printf("\n");
+    printf("\n");*/
 }
 
 void sha512_update(SHA512_CTX *s, const uint8_t *m, uint32_t len)
@@ -279,11 +280,11 @@ void sha512_update(SHA512_CTX *s, const uint8_t *m, uint32_t len)
 	}
 	memcpy(s->buf, p, len);
 	// Debug line to print the block being processed
-    printf("Processing block: ");
+    /*printf("Processing block: ");
     for (int i = 0; i < SHA512_BLOCKLEN && i < len; ++i) {
         printf("%02x ", m[i]);
     }
-    printf("\n");
+    printf("\n");*/
 }
 
 #define INNER_PAD '\x36'
@@ -292,9 +293,15 @@ void sha512_update(SHA512_CTX *s, const uint8_t *m, uint32_t len)
 PBKDF2_SHA512_DEF void hmac_sha512_init(HMAC_SHA512_CTX *hmac, const uint8_t *key, uint32_t keylen)
 {
 	SHA512_CTX *sha = &hmac->sha;
+	/*printf("stage 0: ");
+    for (int i = 0; i < SHA512_DIGESTLEN; ++i) {
+        printf("%02x ", sha->h[i]);
+    }
+    printf("\n");*/
 	
 	if (keylen <= SHA512_BLOCKLEN)
 	{
+		printf("keylen <= SHA512_BLOCKLEN: %d\n", keylen);
 		memcpy(hmac->buf, key, keylen);
 		memset(hmac->buf + keylen, '\0', SHA512_BLOCKLEN - keylen);
 	}
@@ -311,11 +318,33 @@ PBKDF2_SHA512_DEF void hmac_sha512_init(HMAC_SHA512_CTX *hmac, const uint8_t *ke
 	{
 		hmac->buf[ i ] = hmac->buf[ i ] ^ OUTER_PAD;
 	}
-	
+
+	/*printf("Before init: ");
+    for (int i = 0; i < SHA512_DIGESTLEN; ++i) {
+        printf("%02x ", sha->h[i]);
+    }
+    printf("\n");*/
+
 	sha512_init(sha);
 	sha512_update(sha, hmac->buf, SHA512_BLOCKLEN);
+	
+	// Before copying outer state
+	/*printf("Before copying outer state: ");
+	for (int i = 0; i < SHA512_DIGESTLEN; ++i) {
+		printf("%02x ", sha->h[i]);
+	}
+	printf("\n");*/
+
 	// copy outer state
 	memcpy(hmac->h_outer, sha->h, SHA512_DIGESTLEN);
+
+	/*
+	// After copying outer state
+	printf("After copying outer state: ");
+	for (int i = 0; i < SHA512_DIGESTLEN; ++i) {
+		printf("%02x ", hmac->h_outer[i]);
+	}
+	printf("\n");*/
 	
 	for (i = 0; i < SHA512_BLOCKLEN; i++)
 	{
