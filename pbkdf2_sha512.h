@@ -116,6 +116,18 @@ static const uint64_t K[80] = {
     UINT64_C(0x5fcb6fab3ad6faec), UINT64_C(0x6c44198c4a475817),
 };
 
+void my_cuda_memcpy_uint64(uint64_t *dst, const uint64_t *src, unsigned int n) {
+    for (unsigned int i = 0; i < n / sizeof(uint64_t); ++i) {  // assuming n is in bytes
+        dst[i] = src[i];
+    }
+}
+
+void my_cuda_memcpy_unsigned_char(uint8_t *dst, const uint8_t *src, unsigned int n) {
+    for (unsigned int i = 0; i < n; ++i) {
+        dst[i] = src[i];
+    }
+}
+
 static void sha512_transform(SHA512_CTX *s, const uint8_t *buf)
 {
     // Debug line to print the block being transformed
@@ -266,10 +278,17 @@ void sha512_update(SHA512_CTX *s, const uint8_t *m, uint32_t len)
 	{
 		if (len + r < SHA512_BLOCKLEN)
 		{
-			memcpy(s->buf + r, p, len);
+			//printf("sha512_update: len + r < SHA512_BLOCKLEN: %d\n", len + r);
+			//memcpy(s->buf + r, p, len);
+			//my_cuda_memcpy(s->buf + r, p, len);
+			my_cuda_memcpy_unsigned_char(s->buf + r, p, len);
+			//for (uint32_t i = 0; i < len; ++i) {s->buf[r + i] = p[i];}
 			return;
 		}
-		memcpy(s->buf + r, p, SHA512_BLOCKLEN - r);
+		//memcpy(s->buf + r, p, SHA512_BLOCKLEN - r);
+		//my_cuda_memcpy(s->buf + r, p, SHA512_BLOCKLEN - r);
+		my_cuda_memcpy_unsigned_char(s->buf + r, p, SHA512_BLOCKLEN - r);
+		//for (uint32_t i = 0; i < SHA512_BLOCKLEN - r; ++i) {s->buf[r + i] = p[i];}
 		len -= SHA512_BLOCKLEN - r;
 		p += SHA512_BLOCKLEN - r;
 		sha512_transform(s, s->buf);
@@ -278,7 +297,10 @@ void sha512_update(SHA512_CTX *s, const uint8_t *m, uint32_t len)
 	{
 		sha512_transform(s, p);
 	}
-	memcpy(s->buf, p, len);
+	//memcpy(s->buf, p, len);
+	//my_cuda_memcpy(s->buf, p, len);
+	my_cuda_memcpy_unsigned_char(s->buf, p, len);
+	//for (uint32_t i = 0; i < len; ++i) {s->buf[i] = p[i];}
 	// Debug line to print the block being processed
     /*printf("Processing block: ");
     for (int i = 0; i < SHA512_BLOCKLEN && i < len; ++i) {
@@ -302,8 +324,12 @@ PBKDF2_SHA512_DEF void hmac_sha512_init(HMAC_SHA512_CTX *hmac, const uint8_t *ke
 	if (keylen <= SHA512_BLOCKLEN)
 	{
 		printf("keylen <= SHA512_BLOCKLEN: %d\n", keylen);
-		memcpy(hmac->buf, key, keylen);
+		//memcpy(hmac->buf, key, keylen);
+		//my_cuda_memcpy(hmac->buf, key, keylen);
+		my_cuda_memcpy_unsigned_char(hmac->buf, key, keylen);
+		//for (uint32_t i = 0; i < keylen; ++i) {hmac->buf[i] = key[i];}		
 		memset(hmac->buf + keylen, '\0', SHA512_BLOCKLEN - keylen);
+		//for (uint32_t i = keylen; i < SHA512_BLOCKLEN; ++i) {hmac->buf[i] = '\0';}
 	}
 	else
 	{
@@ -311,6 +337,7 @@ PBKDF2_SHA512_DEF void hmac_sha512_init(HMAC_SHA512_CTX *hmac, const uint8_t *ke
 		sha512_update(sha, key, keylen);
 		sha512_final(sha, hmac->buf);
 		memset(hmac->buf + SHA512_DIGESTLEN, '\0', SHA512_BLOCKLEN - SHA512_DIGESTLEN);
+		//for (uint32_t i = SHA512_DIGESTLEN; i < SHA512_BLOCKLEN; ++i) {hmac->buf[i] = '\0';}
 	}
 	
 	uint32_t i;
@@ -336,7 +363,17 @@ PBKDF2_SHA512_DEF void hmac_sha512_init(HMAC_SHA512_CTX *hmac, const uint8_t *ke
 	printf("\n");*/
 
 	// copy outer state
-	memcpy(hmac->h_outer, sha->h, SHA512_DIGESTLEN);
+	//memcpy(hmac->h_outer, sha->h, SHA512_DIGESTLEN);
+	my_cuda_memcpy_uint64(hmac->h_outer, sha->h, SHA512_DIGESTLEN);
+	//printf("SHA512_DIGESTLEN: %lx\n", SHA512_DIGESTLEN);
+	//printf("Size of sha->h: %lu\n", sizeof(sha->h) / sizeof(sha->h[0]));
+	//printf("Size of hmac->h_outer: %lu\n", sizeof(hmac->h_outer) / sizeof(hmac->h_outer[0]));
+	//for (uint32_t i = 0; i < SHA512_DIGESTLEN; ++i) {hmac->h_outer[i] = sha->h[i];}
+	// Make sure SHA512_DIGESTLEN and i have the same type
+	/*for (size_t i = 0; i < SHA512_DIGESTLEN; ++i) {
+		hmac->h_outer[i] = sha->h[i];
+	}*/
+	
 
 	/*
 	// After copying outer state
@@ -354,7 +391,9 @@ PBKDF2_SHA512_DEF void hmac_sha512_init(HMAC_SHA512_CTX *hmac, const uint8_t *ke
 	sha512_init(sha);
 	sha512_update(sha, hmac->buf, SHA512_BLOCKLEN);
 	// copy inner state
-	memcpy(hmac->h_inner, sha->h, SHA512_DIGESTLEN);
+	//memcpy(hmac->h_inner, sha->h, SHA512_DIGESTLEN);
+	my_cuda_memcpy_uint64(hmac->h_inner, sha->h, SHA512_DIGESTLEN);
+	//for (uint32_t i = 0; i < SHA512_DIGESTLEN; ++i) {hmac->h_inner[i] = sha->h[i];}
 }
 
 PBKDF2_SHA512_DEF void hmac_sha512_update(HMAC_SHA512_CTX *hmac, const uint8_t *m, uint32_t mlen)
@@ -368,14 +407,18 @@ PBKDF2_SHA512_DEF void hmac_sha512_final(HMAC_SHA512_CTX *hmac, uint8_t *md)
 	sha512_final(sha, md);
 	
 	// reset sha to outer state
-	memcpy(sha->h, hmac->h_outer, SHA512_DIGESTLEN);
+	//memcpy(sha->h, hmac->h_outer, SHA512_DIGESTLEN);
+	my_cuda_memcpy_uint64(sha->h, hmac->h_outer, SHA512_DIGESTLEN);
+	//for (uint32_t i = 0; i < SHA512_DIGESTLEN; ++i) {sha->h[i] = hmac->h_outer[i];}
 	sha->len = SHA512_BLOCKLEN;
 	
 	sha512_update(sha, md, SHA512_DIGESTLEN);
 	sha512_final(sha, md); // md = D(outer || D(inner || msg))
 	
 	// reset sha to inner state -> reset hmac
-	memcpy(sha->h, hmac->h_inner, SHA512_DIGESTLEN);
+	//memcpy(sha->h, hmac->h_inner, SHA512_DIGESTLEN);
+	my_cuda_memcpy_uint64(sha->h, hmac->h_inner, SHA512_DIGESTLEN);
+	//for (uint32_t i = 0; i < SHA512_DIGESTLEN; ++i) {sha->h[i] = hmac->h_inner[i];}
 	sha->len = SHA512_BLOCKLEN;
 }
 
@@ -405,7 +448,9 @@ PBKDF2_SHA512_DEF void pbkdf2_sha512(HMAC_SHA512_CTX *hmac,
 		hmac_sha512_update(hmac, salt, saltlen);
 		hmac_sha512_update(hmac, count, 4);
 		hmac_sha512_final(hmac, U);
-		memcpy(T, U, len);
+		//memcpy(T, U, len);
+		//my_cuda_memcpy(T, U, len);
+		my_cuda_memcpy_unsigned_char(T, U, len);
 		for (j = 1; j < rounds; j++)
 		{
 			hmac_sha512_update(hmac, U, hlen);
